@@ -68,9 +68,32 @@ bin/console app:dataset:import                             # importe les demande
 L'import peut être relancé sans risque : ce qui est déjà en base n'est pas réimporté.
 Les options `--since=2026-01-01` et `--limit=500` permettent de n'en charger qu'une partie.
 
+## L'interface
+
+Une boîte de réception affiche les demandes importées : liste paginée, recherche dans le texte,
+lecture d'une demande sans recharger la page.
+
+```bash
+bin/console tailwind:build   # compile le CSS (le binaire Tailwind est téléchargé au premier lancement)
+symfony serve                # puis ouvrez http://127.0.0.1:8000
+```
+
+Avec `symfony serve`, le CSS est ensuite recompilé automatiquement à chaque modification.
+
+Elle s'appuie sur [Symfony UX](https://ux.symfony.com/) : Turbo Frames pour la navigation, Stimulus
+pour les deux comportements côté navigateur, Twig Components et le kit
+[shadcn de UX Toolkit](https://ux.symfony.com/toolkit/kits/shadcn) pour les composants, Tailwind CSS
+pour le style. Les composants du kit sont copiés dans `templates/components/` : ils font partie du
+projet et se modifient librement. Pour en ajouter un :
+
+```bash
+bin/console ux:install dialog --kit shadcn
+```
+
 ## Où regarder dans le code
 
 - `src/Command/JevTestCommand.php` : un appel complet, des questions aux réponses.
+- `src/Controller/InboxController.php` et `templates/inbox/` : la boîte de réception.
 - `src/Dataset/` : le téléchargement, la lecture en flux et l'import du jeu de données.
 - `packages/ai-type-safe-platform/` : le bridge TypeSafe pour Symfony AI. Il est
   embarqué dans le dépôt, Composer le charge comme un paquet local.

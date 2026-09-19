@@ -1,0 +1,28 @@
+<turbo-frame id="experience" class="flex min-h-0 flex-col">
+    {% if selected %}
+        <twig:ScrollArea class="min-h-0 flex-1 p-4 lg:p-8">
+            <twig:Card class="mx-auto max-w-3xl">
+                <twig:Card:Header>
+                    <twig:Card:Title>Demande n° {{ selected.id }}</twig:Card:Title>
+                    <twig:Card:Description>
+                        Écrite le <time datetime="{{ selected.writtenAt|date('Y-m-d') }}">{{ selected.writtenAt|date('d/m/Y') }}</time>
+                    </twig:Card:Description>
+                    <twig:Card:Action>
+                        <twig:Badge variant="outline">{{ selected.text|length|number_format(0, ',', ' ') }} caractères</twig:Badge>
+                    </twig:Card:Action>
+                </twig:Card:Header>
+                <twig:Card:Content>
+                    <p class="text-base leading-relaxed whitespace-pre-line">{{ selected.text }}</p>
+                </twig:Card:Content>
+            </twig:Card>
+        </twig:ScrollArea>
+    {% else %}
+        <twig:Empty>
+            <twig:Empty:Header>
+                <twig:Empty:Media variant="icon"><twig:ux:icon name="lucide:mouse-pointer-click" /></twig:Empty:Media>
+                <twig:Empty:Title>Aucune demande ouverte</twig:Empty:Title>
+                <twig:Empty:Description>Choisissez une demande dans la liste pour la lire en entier.</twig:Empty:Description>
+            </twig:Empty:Header>
+        </twig:Empty>
+    {% endif %}
+</turbo-frame>

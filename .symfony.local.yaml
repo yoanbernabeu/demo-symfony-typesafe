@@ -1,0 +1,5 @@
+# Local web server configuration, read by "symfony serve"
+workers:
+    # Rebuilds the CSS whenever a template or a stylesheet changes
+    tailwind:
+        cmd: ['symfony', 'console', 'tailwind:build', '--watch']

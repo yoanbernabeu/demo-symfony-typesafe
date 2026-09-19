@@ -1,0 +1,82 @@
+{# Paginating or searching swaps this frame only, and keeps the address bar in sync #}
+<turbo-frame id="experiences" data-turbo-action="advance" class="flex min-h-0 flex-col border-b lg:border-e lg:border-b-0">
+    <p class="flex items-center gap-2 border-b px-4 py-2 text-sm text-muted-foreground">
+        <twig:Badge variant="secondary">{{ page.total|number_format(0, ',', ' ') }}</twig:Badge>
+        {{ search ? 'résultat' : 'demande' }}{{ page.total > 1 ? 's' }}{% if search %} pour « {{ search }} »{% endif %}
+    </p>
+    {% if page.items is empty %}
+        <twig:Empty>
+            <twig:Empty:Header>
+                <twig:Empty:Media variant="icon"><twig:ux:icon name="lucide:search-x" /></twig:Empty:Media>
+                <twig:Empty:Title>Aucune demande</twig:Empty:Title>
+                <twig:Empty:Description>
+                    {% if search %}
+                        Rien ne correspond à « {{ search }} ».
+                    {% else %}
+                        La base est vide : lancez <code>bin/console app:dataset:import</code>.
+                    {% endif %}
+                </twig:Empty:Description>
+            </twig:Empty:Header>
+        </twig:Empty>
+    {% else %}
+        <twig:ScrollArea class="min-h-0 flex-1">
+            <nav aria-label="Demandes" class="flex flex-col gap-0.5 p-2" data-controller="current-item">
+                {% for experience in page.items %}
+                    {# The row is outside of the "experience" frame it targets, hence the explicit data-turbo-frame #}
+                    <twig:Item
+                        as="a"
+                        href="{{ path('app_inbox_show', {id: experience.id}) }}"
+                        data-turbo-frame="experience"
+                        data-turbo-action="advance"
+                        data-current-item-target="item"
+                        data-action="current-item#select"
+                        aria-current="{{ selected and selected.id == experience.id ? 'true' : 'false' }}"
+                        class="aria-[current=true]:bg-muted"
+                    >
+                        <twig:Item:Content>
+                            <twig:Item:Title class="w-full justify-between">
+                                <span>Demande n° {{ experience.id }}</span>
+                                <time datetime="{{ experience.writtenAt|date('Y-m-d') }}" class="text-xs font-normal text-muted-foreground">{{ experience.writtenAt|date('d/m/Y') }}</time>
+                            </twig:Item:Title>
+                            <twig:Item:Description>{{ experience.text }}</twig:Item:Description>
+                        </twig:Item:Content>
+                    </twig:Item>
+                {% endfor %}
+            </nav>
+        </twig:ScrollArea>
+
+        {# Icon-only links around a label: the width no longer depends on how many digits the page numbers have #}
+        <footer class="border-t px-2 py-2">
+            <twig:Pagination>
+                <twig:Pagination:Content class="w-full justify-between">
+                    {% set links = [
+                        {label: 'Première page', icon: 'lucide:chevrons-left', number: 1, enabled: page.hasPrevious},
+                        {label: 'Page précédente', icon: 'lucide:chevron-left', number: page.number - 1, enabled: page.hasPrevious},
+                        null,
+                        {label: 'Page suivante', icon: 'lucide:chevron-right', number: page.number + 1, enabled: page.hasNext},
+                        {label: 'Dernière page', icon: 'lucide:chevrons-right', number: page.lastNumber, enabled: page.hasNext},
+                    ] %}
+                    {% for link in links %}
+                        {% if link is null %}
+                            <li class="min-w-0 flex-1 truncate px-2 text-center text-xs text-muted-foreground">
+                                Page {{ page.number|number_format(0, ',', ' ') }} sur {{ page.lastNumber|number_format(0, ',', ' ') }}
+                            </li>
+                        {% elseif link.enabled %}
+                            <twig:Pagination:Item>
+                                <twig:Pagination:Link href="{{ path('app_inbox', {page: link.number, q: search ?: null}) }}" aria-label="{{ link.label }}" title="{{ link.label }}">
+                                    <twig:ux:icon name="{{ link.icon }}" />
+                                </twig:Pagination:Link>
+                            </twig:Pagination:Item>
+                        {% else %}
+                            <twig:Pagination:Item>
+                                <twig:Pagination:Link aria-label="{{ link.label }}" aria-disabled="true" class="pointer-events-none opacity-40">
+                                    <twig:ux:icon name="{{ link.icon }}" />
+                                </twig:Pagination:Link>
+                            </twig:Pagination:Item>
+                        {% endif %}
+                    {% endfor %}
+                </twig:Pagination:Content>
+            </twig:Pagination>
+        </footer>
+    {% endif %}
+</turbo-frame>

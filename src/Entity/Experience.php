@@ -10,6 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
  * What a user wrote to a public service, imported from the open dataset.
  */
 #[ORM\Entity(repositoryClass: ExperienceRepository::class)]
+// The inbox lists the most recent experiences first: without it, every page sorts the whole table
+#[ORM\Index(name: 'experience_recent_first_idx', fields: ['writtenAt', 'id'])]
 class Experience
 {
     public function __construct(
