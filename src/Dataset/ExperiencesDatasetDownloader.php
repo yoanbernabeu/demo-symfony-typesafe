@@ -18,7 +18,7 @@ final class ExperiencesDatasetDownloader
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
-        #[Autowire('%kernel.project_dir%/var/dataset/experiences.csv')] private readonly string $path,
+        #[Autowire(param: 'app.experiences_dataset_path')] private readonly string $path,
         private readonly Filesystem $filesystem = new Filesystem(),
     ) {
     }

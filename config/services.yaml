@@ -7,6 +7,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Where app:dataset:download stores the dataset, and where it is read from
+    app.experiences_dataset_path: '%kernel.project_dir%/var/dataset/experiences.csv'
 
 services:
     # default configuration for services in *this* file
