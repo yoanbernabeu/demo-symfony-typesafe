@@ -8,7 +8,9 @@ use App\Triage\ExperienceTriage;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 #[AsMessageHandler]
 final class TriageExperiencesHandler
@@ -19,6 +21,7 @@ final class TriageExperiencesHandler
         private readonly EntityManagerInterface $entityManager,
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
+        #[Target('jev')] private readonly RateLimiterFactoryInterface $jevLimiter,
     ) {
     }
 
@@ -33,6 +36,9 @@ final class TriageExperiencesHandler
         if ([] === $awaiting) {
             return;
         }
+
+        // One token per request to Jev. When the minute is used up, the worker sleeps here until the next one
+        $this->jevLimiter->create('triage')->reserve(\count($awaiting))->wait();
 
         $startedAt = microtime(true);
         $results = $this->triage->triage($awaiting);

@@ -15,6 +15,8 @@ use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 final class TriageExperiencesHandlerTest extends KernelTestCase
 {
@@ -22,11 +24,13 @@ final class TriageExperiencesHandlerTest extends KernelTestCase
 
     private EntityManagerInterface $entityManager;
     private ExperienceRepository $repository;
+    private RateLimiterFactory $limiter;
 
     protected function setUp(): void
     {
         $this->entityManager = $this->resetDatabase();
         $this->repository = self::getContainer()->get(ExperienceRepository::class);
+        $this->limiter = new RateLimiterFactory(['id' => 'jev', 'policy' => 'fixed_window', 'limit' => 100, 'interval' => '1 minute'], new InMemoryStorage());
 
         $this->entityManager->persist(new Experience(1, new \DateTimeImmutable('2026-02-01'), 'Impossible de payer ma carte grise, le site plante.'));
         $this->entityManager->persist(new Experience(2, new \DateTimeImmutable('2026-02-02'), 'Celle-ci tombe pendant une panne de Jev.'));
@@ -62,6 +66,17 @@ final class TriageExperiencesHandlerTest extends KernelTestCase
         self::assertCount(1, $jev->requests, 'Neither the experience nobody asked about, nor the one already triaged, costs a call.');
     }
 
+    public function testEveryRequestToJevCountsAgainstTheRateLimit(): void
+    {
+        $jev = new JevResponses(static fn (): MockResponse => JevResponses::answer('information', 0.7, 1.0, 0.1));
+
+        // Experience 3 was never requested: it is not sent to Jev, so it must not use up the budget either
+        $this->createHandler($jev)(new TriageExperiences([1, 2, 3]));
+
+        self::assertCount(2, $jev->requests);
+        self::assertSame(98, $this->limiter->create('triage')->consume(0)->getRemainingTokens());
+    }
+
     public function testAPartialFailureKeepsWhatSucceededAndAsksForARetry(): void
     {
         $jev = new JevResponses(static fn (string $state): MockResponse => str_contains($state, 'panne')
@@ -88,6 +103,7 @@ final class TriageExperiencesHandlerTest extends KernelTestCase
             $this->entityManager,
             new MockClock('2026-09-19 10:00:05'),
             new NullLogger(),
+            $this->limiter,
         );
     }
 }

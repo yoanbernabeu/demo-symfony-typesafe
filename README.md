@@ -95,13 +95,18 @@ bin/console messenger:consume async
 
 ## Régler la qualification
 
-Trois variables, à surcharger dans `.env.local` :
+Quatre variables, à surcharger dans `.env.local` :
 
 | Variable | Défaut | Rôle |
 |---|---|---|
 | `APP_TRIAGE_SINCE` | `2026-01-01` | Seules les demandes écrites depuis ce jour sont envoyées à Jev |
 | `APP_TRIAGE_LIMIT` | `1000` | Plafond du nombre total de demandes envoyées à Jev, pour maîtriser la facture. `0` retire le plafond |
 | `APP_TRIAGE_BATCH_SIZE` | `25` | Nombre de demandes par message, envoyées à Jev en même temps |
+| `APP_TRIAGE_REQUESTS_PER_MINUTE` | `1100` | Débit maximal vers Jev. TypeSafe refuse au-delà de 1 200 requêtes par minute |
+
+Un run de 1 000 demandes tient dans la minute et va à pleine vitesse. Au-delà, le worker se met en
+pause jusqu'à la minute suivante et le tableau de bord l'indique : comptez environ une minute par
+tranche de 1 100 demandes.
 
 ## Les commandes
 
@@ -130,6 +135,8 @@ flowchart LR
 - Le parallélisme se fait **dans** chaque lot : un seul worker suffit, et SQLite n'a qu'un écrivain à la fois.
 - Si Jev échoue sur une partie d'un lot, ce qui a réussi est enregistré et Messenger rejoue le
   message : seules les demandes manquantes sont redemandées.
+- Un limiteur de débit (RateLimiter, fenêtre fixe) compte un jeton par requête : le worker attend
+  quand la minute est consommée, plutôt que de se faire refuser par l'API.
 - Le tableau de bord ne reçoit rien du worker. C'est un Live Component qui se relit chaque seconde
   tant que des demandes sont en attente : le worker et le site partagent la base, il n'y a donc
   aucun service de temps réel à installer.
@@ -140,6 +147,7 @@ flowchart LR
 |---|---|
 | Parler à Jev | [Symfony AI](https://symfony.com/doc/current/ai/index.html) et son bridge TypeSafe |
 | Traitement en arrière-plan | Messenger, transport Doctrine, message routé par `#[AsMessage]` |
+| Respecter le débit de l'API | RateLimiter, avec Lock |
 | Persistance | Doctrine ORM sur SQLite, migrations |
 | Lire la query string | `#[MapQueryString]` vers un objet validé |
 | Navigation sans rechargement | [Turbo Frames](https://ux.symfony.com/turbo) |

@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        # TypeSafe accepts 1,200 requests per minute and answers "429 Too Many Requests" beyond.
+        # A fixed window lets a short run go at full speed, and pauses a long one until the minute is over.
+        jev:
+            policy: fixed_window
+            limit: '%env(int:APP_TRIAGE_REQUESTS_PER_MINUTE)%'
+            interval: '1 minute'

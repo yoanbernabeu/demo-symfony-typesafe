@@ -6,9 +6,11 @@ framework:
             # https://symfony.com/doc/current/messenger.html#transport-configuration
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                # 2 s, 6 s, 18 s, 54 s then 162 s: long enough to outlast a minute of rate limiting by Jev
                 retry_strategy:
-                    max_retries: 3
-                    multiplier: 2
+                    max_retries: 5
+                    delay: 2000
+                    multiplier: 3
             failed: 'doctrine://default?queue_name=failed'
             # sync: 'sync://'
 

@@ -61,6 +61,10 @@ final class ExperienceRepositoryTest extends KernelTestCase
         self::assertSame(6, $progress->duration());
         self::assertSame(0.5, $progress->rate());
         self::assertSame(['mean' => 533, 'median' => 400, 'p95' => 400, 'max' => 900], $progress->latency);
+
+        // The last answer came back at 10:00:06 and an experience is still pending
+        self::assertFalse($progress->isStalled(new \DateTimeImmutable('2026-09-19 10:00:08')));
+        self::assertTrue($progress->isStalled(new \DateTimeImmutable('2026-09-19 10:00:30')), 'Nothing came back for a while: the worker waits for the rate limit, or is not running.');
     }
 
     public function testNothingRequestedMeansNothingToReport(): void

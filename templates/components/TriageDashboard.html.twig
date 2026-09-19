@@ -12,7 +12,12 @@
                 <code class="text-xs">APP_TRIAGE_LIMIT</code>
             </twig:Card:Description>
             <twig:Card:Action>
-                {% if progress.running %}
+                {% if dashboard.stalled %}
+                    <twig:Button disabled variant="outline">
+                        <twig:ux:icon name="lucide:pause" data-icon="inline-start" />
+                        En pause
+                    </twig:Button>
+                {% elseif progress.running %}
                     <twig:Button disabled>
                         <twig:ux:icon name="lucide:loader-circle" data-icon="inline-start" class="animate-spin" />
                         Jev travaille…
@@ -32,6 +37,13 @@
             <p class="flex flex-wrap justify-between gap-x-4 text-sm text-muted-foreground">
                 <span><b class="text-foreground tabular-nums">{{ progress.triaged|number_format(0, ',', ' ') }}</b> qualifiées sur {{ progress.requested|number_format(0, ',', ' ') }}</span>
                 <span class="tabular-nums">{{ progress.pending|number_format(0, ',', ' ') }} en attente · {{ progress.percent }} %</span>
+            </p>
+            <p class="text-xs text-muted-foreground">
+                {% if dashboard.stalled %}
+                    En pause : le débit est plafonné à {{ dashboard.requestsPerMinute|number_format(0, ',', ' ') }} requêtes par minute, la qualification reprend dès que la minute en cours est écoulée. Si rien ne bouge, vérifiez que le worker tourne.
+                {% else %}
+                    Débit plafonné à {{ dashboard.requestsPerMinute|number_format(0, ',', ' ') }} requêtes par minute <code>APP_TRIAGE_REQUESTS_PER_MINUTE</code>, sous la limite de 1 200 de TypeSafe.
+                {% endif %}
             </p>
         </twig:Card:Content>
     </twig:Card>

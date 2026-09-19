@@ -34,6 +34,17 @@ final readonly class TriageProgress
         return $this->pending() > 0;
     }
 
+    /**
+     * Whether experiences are pending while nothing came back lately: the worker is most likely
+     * waiting for the rate limit of Jev to let it go on, or it is not running.
+     */
+    public function isStalled(\DateTimeImmutable $now, int $afterSeconds = 4): bool
+    {
+        $lastActivity = $this->lastTriagedAt ?? $this->startedAt;
+
+        return $this->isRunning() && null !== $lastActivity && $now->getTimestamp() - $lastActivity->getTimestamp() >= $afterSeconds;
+    }
+
     public function percent(): int
     {
         return 0 === $this->requested ? 0 : (int) floor(100 * $this->triaged / $this->requested);

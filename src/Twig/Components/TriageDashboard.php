@@ -6,6 +6,8 @@ use App\Repository\ExperienceRepository;
 use App\Triage\Intention;
 use App\Triage\TriageLauncher;
 use App\Triage\TriageProgress;
+use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -24,6 +26,8 @@ final class TriageDashboard
     public function __construct(
         private readonly ExperienceRepository $experiences,
         private readonly TriageLauncher $launcher,
+        private readonly ClockInterface $clock,
+        #[Autowire(env: 'int:APP_TRIAGE_REQUESTS_PER_MINUTE')] private readonly int $requestsPerMinute,
     ) {
     }
 
@@ -55,6 +59,16 @@ final class TriageDashboard
     public function getSince(): \DateTimeImmutable
     {
         return $this->launcher->getSince();
+    }
+
+    public function getRequestsPerMinute(): int
+    {
+        return $this->requestsPerMinute;
+    }
+
+    public function isStalled(): bool
+    {
+        return $this->getProgress()->isStalled($this->clock->now());
     }
 
     public function canLaunch(): bool
