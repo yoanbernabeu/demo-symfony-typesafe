@@ -1,6 +1,6 @@
 {
     "type": "project",
-    "license": "proprietary",
+    "license": ["MIT"],
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
@@ -117,5 +117,7 @@
                 }
             }
         }
-    }
+    },
+    "name": "yoanbernabeu/demo-symfony-typesafe",
+    "description": "Demo: triaging support requests with Jev (TypeSafe) and Symfony AI"
 }
