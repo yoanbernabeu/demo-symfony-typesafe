@@ -90,10 +90,49 @@ projet et se modifient librement. Pour en ajouter un :
 bin/console ux:install dialog --kit shadcn
 ```
 
-## Où regarder dans le code
+## La qualification par Jev
 
+Chaque demande est envoyée à Jev avec trois questions, en un seul appel :
+
+| Question | Type | Réponse |
+|---|---|---|
+| Qu'attend la personne ? | Choice | Une intention parmi six, avec une confiance |
+| À quel point est-ce urgent ? | Score | Une priorité de 0 à 3 |
+| Est-ce un bug du site à transmettre aux devs ? | Noul | Une probabilité |
+
+Le traitement est asynchrone : les demandes partent dans une file Messenger par lots, un worker
+les envoie à Jev et enregistre les réponses. La page **Qualification** suit l'avancement en direct
+(demandes qualifiées, débit, latence de Jev, tokens, répartition par intention) et porte le bouton
+de lancement. Avec `symfony serve`, le worker tourne déjà. Sinon :
+
+```bash
+bin/console messenger:consume async
+```
+
+Trois variables, à surcharger dans `.env.local`, cadrent le traitement :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `APP_TRIAGE_SINCE` | `2026-01-01` | Seules les demandes écrites depuis ce jour sont envoyées à Jev |
+| `APP_TRIAGE_LIMIT` | `1000` | Plafond du nombre total de demandes envoyées à Jev, pour maîtriser la facture. `0` retire le plafond |
+| `APP_TRIAGE_BATCH_SIZE` | `25` | Nombre de demandes par message, envoyées à Jev en même temps |
+
+En ligne de commande :
+
+```bash
+bin/console app:triage:start   # met les demandes en file, comme le bouton
+bin/console app:triage:reset   # oublie les réponses de Jev, pour rejouer la qualification
+```
+
+Une fois qualifiées, les demandes se filtrent par intention, par « bugs à transmettre », et se
+trient par urgence dans la boîte de réception.
+
+## Où regarder dans le code
 - `src/Command/JevTestCommand.php` : un appel complet, des questions aux réponses.
 - `src/Controller/InboxController.php` et `templates/inbox/` : la boîte de réception.
+- `src/Triage/` : les trois questions posées à Jev, le lancement et le suivi de la qualification.
+- `src/Message/` et `src/MessageHandler/` : le traitement asynchrone d'un lot de demandes.
+- `src/Twig/Components/TriageDashboard.php` : le tableau de bord, un Live Component qui s'actualise seul.
 - `src/Dataset/` : le téléchargement, la lecture en flux et l'import du jeu de données.
 - `packages/ai-type-safe-platform/` : le bridge TypeSafe pour Symfony AI. Il est
   embarqué dans le dépôt, Composer le charge comme un paquet local.

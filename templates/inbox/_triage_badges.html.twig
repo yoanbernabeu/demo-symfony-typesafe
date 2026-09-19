@@ -1,0 +1,14 @@
+{# The three answers of Jev about an experience, in a nutshell #}
+{% if experience.triaged %}
+    <span class="flex flex-wrap items-center gap-1">
+        <twig:Badge variant="secondary">{{ experience.intention.label }}</twig:Badge>
+        <twig:Badge variant="{{ experience.priority >= constant('App\\Triage\\TriageResult::URGENT_PRIORITY') ? 'destructive' : 'outline' }}" title="Priorité, de 0 à 3">
+            <twig:ux:icon name="lucide:siren" /> {{ experience.priority|number_format(1, ',') }}
+        </twig:Badge>
+        {% if experience.bugProbability >= constant('App\\Triage\\TriageResult::PROBABLE_BUG') %}
+            <twig:Badge variant="destructive" title="Probabilité que ce soit un bug du site">
+                <twig:ux:icon name="lucide:bug" /> {{ (experience.bugProbability * 100)|round }} %
+            </twig:Badge>
+        {% endif %}
+    </span>
+{% endif %}

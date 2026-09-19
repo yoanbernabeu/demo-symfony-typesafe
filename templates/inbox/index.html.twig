@@ -1,31 +1,23 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}Boîte de réception · DemoJev{% endblock %}
 
-{% block body %}
-<div class="flex h-dvh flex-col" data-controller="theme">
-    <header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3">
-        <a href="{{ path('app_inbox') }}" class="flex items-center gap-2 font-semibold">
-            <twig:ux:icon name="lucide:inbox" class="size-5" />
-            Boîte de réception
-        </a>
-
-        {# Searching only reloads the list: the request being read stays open #}
-        <form action="{{ path('app_inbox') }}" method="get" role="search" data-turbo-frame="experiences" class="ms-auto flex w-full max-w-sm items-center gap-2">
-            <twig:Input type="search" name="q" value="{{ search }}" placeholder="Rechercher dans les demandes…" aria-label="Rechercher dans les demandes" />
-            <twig:Button type="submit" variant="outline" size="icon" aria-label="Rechercher">
-                <twig:ux:icon name="lucide:search" />
-            </twig:Button>
-        </form>
-
-        <twig:Button variant="ghost" size="icon" aria-label="Changer de thème" data-action="theme#toggle">
-            <twig:ux:icon name="lucide:sun-moon" />
+{% block header_tools %}
+    {# Searching only reloads the list: the request being read stays open #}
+    <form action="{{ path('app_inbox') }}" method="get" role="search" data-turbo-frame="experiences" class="flex w-64 items-center gap-2 sm:w-80">
+        {% for name, value in query.toParameters({q: ''}) %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endfor %}
+        <twig:Input type="search" name="q" value="{{ query.search }}" placeholder="Rechercher dans les demandes…" aria-label="Rechercher dans les demandes" />
+        <twig:Button type="submit" variant="outline" size="icon" aria-label="Rechercher">
+            <twig:ux:icon name="lucide:search" />
         </twig:Button>
-    </header>
+    </form>
+{% endblock %}
 
-    <main class="grid min-h-0 flex-1 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:grid-rows-1">
-        {{ include('inbox/_list.html.twig') }}
-        {{ include('inbox/_experience.html.twig') }}
-    </main>
-</div>
+{% block main %}
+<main class="grid min-h-0 flex-1 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:grid-rows-1">
+    {{ include('inbox/_list.html.twig') }}
+    {{ include('inbox/_experience.html.twig') }}
+</main>
 {% endblock %}

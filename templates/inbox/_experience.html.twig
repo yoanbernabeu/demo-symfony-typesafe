@@ -1,20 +1,60 @@
 <turbo-frame id="experience" class="flex min-h-0 flex-col">
     {% if selected %}
         <twig:ScrollArea class="min-h-0 flex-1 p-4 lg:p-8">
-            <twig:Card class="mx-auto max-w-3xl">
-                <twig:Card:Header>
-                    <twig:Card:Title>Demande n° {{ selected.id }}</twig:Card:Title>
-                    <twig:Card:Description>
-                        Écrite le <time datetime="{{ selected.writtenAt|date('Y-m-d') }}">{{ selected.writtenAt|date('d/m/Y') }}</time>
-                    </twig:Card:Description>
-                    <twig:Card:Action>
-                        <twig:Badge variant="outline">{{ selected.text|length|number_format(0, ',', ' ') }} caractères</twig:Badge>
-                    </twig:Card:Action>
-                </twig:Card:Header>
-                <twig:Card:Content>
-                    <p class="text-base leading-relaxed whitespace-pre-line">{{ selected.text }}</p>
-                </twig:Card:Content>
-            </twig:Card>
+            <div class="mx-auto flex max-w-3xl flex-col gap-4">
+                <twig:Card>
+                    <twig:Card:Header>
+                        <twig:Card:Title>Demande n° {{ selected.id }}</twig:Card:Title>
+                        <twig:Card:Description>
+                            Écrite le <time datetime="{{ selected.writtenAt|date('Y-m-d') }}">{{ selected.writtenAt|date('d/m/Y') }}</time>
+                        </twig:Card:Description>
+                        <twig:Card:Action>
+                            <twig:Badge variant="outline">{{ selected.text|length|number_format(0, ',', ' ') }} caractères</twig:Badge>
+                        </twig:Card:Action>
+                    </twig:Card:Header>
+                    <twig:Card:Content>
+                        <p class="text-base leading-relaxed whitespace-pre-line">{{ selected.text }}</p>
+                    </twig:Card:Content>
+                </twig:Card>
+
+                <twig:Card>
+                    <twig:Card:Header>
+                        <twig:Card:Title>Qualification par Jev</twig:Card:Title>
+                        <twig:Card:Description>
+                            {% if selected.triaged %}
+                                Trois réponses, obtenues en un seul appel{% if selected.triageDurationMs %} de {{ selected.triageDurationMs }} ms{% endif %}.
+                            {% elseif selected.awaitsTriage %}
+                                Dans la file d'attente.
+                            {% else %}
+                                Cette demande n'a pas encore été envoyée à Jev.
+                            {% endif %}
+                        </twig:Card:Description>
+                    </twig:Card:Header>
+                    {% if selected.triaged %}
+                        {% set max_priority = constant('App\\Triage\\TriageResult::MAX_PRIORITY') %}
+                        <twig:Card:Content class="grid gap-5 sm:grid-cols-3">
+                            <div class="flex flex-col gap-1.5">
+                                <p class="flex items-center justify-between text-xs text-muted-foreground">Intention <twig:Badge variant="outline">Choice</twig:Badge></p>
+                                <p class="font-medium">{{ selected.intention.label }}</p>
+                                <twig:Progress value="{{ (selected.intentionConfidence * 100)|round }}" aria-label="Confiance" />
+                                <p class="text-xs text-muted-foreground tabular-nums">confiance {{ selected.intentionConfidence|number_format(2, ',') }}</p>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <p class="flex items-center justify-between text-xs text-muted-foreground">Priorité <twig:Badge variant="outline">Score</twig:Badge></p>
+                                <p class="font-medium tabular-nums">{{ selected.priority|number_format(2, ',') }} <span class="font-normal text-muted-foreground">sur {{ max_priority }}</span></p>
+                                <twig:Progress value="{{ (selected.priority / max_priority * 100)|round }}" aria-label="Priorité" />
+                                <p class="text-xs text-muted-foreground">{{ selected.priority >= constant('App\\Triage\\TriageResult::URGENT_PRIORITY') ? 'à traiter en urgence' : 'peut attendre' }}</p>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <p class="flex items-center justify-between text-xs text-muted-foreground">Bug du site <twig:Badge variant="outline">Noul</twig:Badge></p>
+                                <p class="font-medium tabular-nums">{{ selected.bugProbability|number_format(2, ',') }}</p>
+                                <twig:Progress value="{{ (selected.bugProbability * 100)|round }}" aria-label="Probabilité de bug" />
+                                <p class="text-xs text-muted-foreground">{{ selected.bugProbability >= constant('App\\Triage\\TriageResult::PROBABLE_BUG') ? 'à transmettre aux devs' : 'rien à transmettre' }}</p>
+                            </div>
+                        </twig:Card:Content>
+                    {% endif %}
+                </twig:Card>
+            </div>
         </twig:ScrollArea>
     {% else %}
         <twig:Empty>

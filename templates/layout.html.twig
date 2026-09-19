@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+{% set route = app.request.attributes.get('_route') %}
+<div class="flex h-dvh flex-col" data-controller="theme">
+    <header class="flex flex-wrap items-center gap-x-2 gap-y-2 border-b px-4 py-3">
+        <nav aria-label="Navigation principale" class="flex items-center gap-1">
+            <twig:Button as="a" href="{{ path('app_inbox') }}" variant="{{ route starts with 'app_inbox' ? 'secondary' : 'ghost' }}" aria-current="{{ route starts with 'app_inbox' ? 'page' : 'false' }}">
+                <twig:ux:icon name="lucide:inbox" data-icon="inline-start" />
+                Boîte de réception
+            </twig:Button>
+            <twig:Button as="a" href="{{ path('app_triage') }}" variant="{{ route == 'app_triage' ? 'secondary' : 'ghost' }}" aria-current="{{ route == 'app_triage' ? 'page' : 'false' }}">
+                <twig:ux:icon name="lucide:gauge" data-icon="inline-start" />
+                Qualification
+            </twig:Button>
+        </nav>
+
+        <div class="ms-auto flex items-center gap-2">
+            {% block header_tools %}{% endblock %}
+            <twig:Button variant="ghost" size="icon" aria-label="Changer de thème" data-action="theme#toggle">
+                <twig:ux:icon name="lucide:sun-moon" />
+            </twig:Button>
+        </div>
+    </header>
+
+    {% block main %}{% endblock %}
+</div>
+{% endblock %}

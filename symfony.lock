@@ -306,6 +306,18 @@
             "config/packages/ux_icons.yaml"
         ]
     },
+    "symfony/ux-live-component": {
+        "version": "3.5",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.6",
+            "ref": "b7130b7b5ddc2f8994bd6149d7c093b184782f0c"
+        },
+        "files": [
+            "config/routes/ux_live_component.yaml"
+        ]
+    },
     "symfony/ux-toolkit": {
         "version": "v3.5.0"
     },

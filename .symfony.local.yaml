@@ -3,3 +3,9 @@ workers:
     # Rebuilds the CSS whenever a template or a stylesheet changes
     tailwind:
         cmd: ['symfony', 'console', 'tailwind:build', '--watch']
+
+    # Handles the queued messages, that is the batches of experiences sent to Jev.
+    # A single worker on purpose: SQLite does not cope well with several writers, and
+    # every batch already talks to Jev concurrently.
+    messenger_consume_async:
+        cmd: ['symfony', 'console', 'messenger:consume', 'async', '--memory-limit=256M']

@@ -3,6 +3,8 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Experience;
+use App\Triage\Intention;
+use App\Triage\TriageResult;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -76,7 +78,7 @@ final class InboxControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('#experience', 'Demande de test numéro 12 à propos de ma carte grise.');
         self::assertSelectorTextContains('#experience', '12/03/2025');
-        self::assertCount(1, $crawler->filter('#experiences a[aria-current="true"]'));
+        self::assertCount(1, $crawler->filter('#experiences [data-slot="item"][aria-current="true"]'));
     }
 
     public function testATurboFrameRequestOnlyGetsTheFrame(): void
@@ -87,6 +89,31 @@ final class InboxControllerTest extends WebTestCase
         self::assertSelectorTextContains('turbo-frame#experience', 'Demande de test numéro 12');
         self::assertSelectorNotExists('#experiences');
         self::assertStringNotContainsString('<html', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testItShowsAndFiltersOnWhatJevAnswered(): void
+    {
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $experience = $entityManager->find(Experience::class, 12);
+        $experience->requestTriage(new \DateTimeImmutable('2026-09-19 10:00:00'));
+        $experience->triage(new TriageResult(Intention::Unblock, 0.91, 2.4, 0.97, 480, 410), new \DateTimeImmutable('2026-09-19 10:00:01'));
+        $entityManager->flush();
+
+        $crawler = $this->client->request('GET', '/?intention=debloquer&bugs=1');
+
+        self::assertResponseIsSuccessful();
+        $rows = $crawler->filter('#experiences [data-slot="item"]');
+        self::assertCount(1, $rows);
+        self::assertStringContainsString('Débloquer un dossier', $rows->text());
+        self::assertStringContainsString('97 %', $rows->text());
+        self::assertSelectorExists('#experiences a[aria-pressed="true"][href="/?bugs=1"]', 'Clicking the pressed intention releases it and keeps the other filter.');
+
+        $this->client->request('GET', '/demandes/12');
+        self::assertSelectorTextContains('#experience', 'à transmettre aux devs');
+        self::assertSelectorTextContains('#experience', '410 ms');
+
+        $this->client->request('GET', '/?intention=inconnue');
+        self::assertResponseStatusCodeSame(404);
     }
 
     public function testAnUnknownExperienceIsNotFound(): void

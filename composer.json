@@ -41,6 +41,7 @@
         "symfony/translation": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/ux-icons": "^3.5",
+        "symfony/ux-live-component": "^3.5",
         "symfony/ux-turbo": "^3.4",
         "symfony/ux-twig-component": "^3.5",
         "symfony/validator": "8.1.*",

@@ -1,0 +1,100 @@
+{# Polls every second while Jev is working, and lazily otherwise to notice a triage started from the command line #}
+{# Inside a nested component such as Card, "this" is that component: keep a handle on the dashboard #}
+{% set dashboard = this %}
+{% set progress = dashboard.progress %}
+<div {{ attributes.defaults({'data-poll': progress.running ? 'delay(1000)|$render' : 'delay(5000)|$render', class: 'mx-auto flex max-w-5xl flex-col gap-4'}) }}>
+    <twig:Card>
+        <twig:Card:Header>
+            <twig:Card:Title>Qualification par Jev</twig:Card:Title>
+            <twig:Card:Description>
+                Demandes écrites depuis le {{ dashboard.since|date('d/m/Y') }} ·
+                {% if dashboard.limit %}plafond de {{ dashboard.limit|number_format(0, ',', ' ') }} demandes{% else %}sans plafond{% endif %}
+                <code class="text-xs">APP_TRIAGE_LIMIT</code>
+            </twig:Card:Description>
+            <twig:Card:Action>
+                {% if progress.running %}
+                    <twig:Button disabled>
+                        <twig:ux:icon name="lucide:loader-circle" data-icon="inline-start" class="animate-spin" />
+                        Jev travaille…
+                    </twig:Button>
+                {% elseif dashboard.canLaunch %}
+                    <twig:Button data-action="live#action" data-live-action-param="launch" data-loading="addAttribute(disabled)">
+                        <twig:ux:icon name="lucide:play" data-icon="inline-start" />
+                        Lancer la qualification
+                    </twig:Button>
+                {% else %}
+                    <twig:Button disabled title="Le plafond APP_TRIAGE_LIMIT est atteint">Plafond atteint</twig:Button>
+                {% endif %}
+            </twig:Card:Action>
+        </twig:Card:Header>
+        <twig:Card:Content class="flex flex-col gap-2">
+            <twig:Progress value="{{ progress.percent }}" class="h-2" aria-label="Avancement de la qualification" />
+            <p class="flex flex-wrap justify-between gap-x-4 text-sm text-muted-foreground">
+                <span><b class="text-foreground tabular-nums">{{ progress.triaged|number_format(0, ',', ' ') }}</b> qualifiées sur {{ progress.requested|number_format(0, ',', ' ') }}</span>
+                <span class="tabular-nums">{{ progress.pending|number_format(0, ',', ' ') }} en attente · {{ progress.percent }} %</span>
+            </p>
+        </twig:Card:Content>
+    </twig:Card>
+
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3">
+        {% set duration = progress.duration %}
+        {% set tiles = [
+            {icon: 'lucide:zap', label: 'Débit', value: progress.rate|number_format(1, ',', ' ') ~ ' /s', hint: 'demandes par seconde'},
+            {icon: 'lucide:timer', label: 'Durée', value: duration >= 60 ? (duration // 60) ~ ' min ' ~ (duration % 60) ~ ' s' : duration ~ ' s', hint: 'du premier envoi à la dernière réponse'},
+            {icon: 'lucide:coins', label: 'Tokens', value: progress.tokens|number_format(0, ',', ' '), hint: 'entrée et sortie cumulées'},
+        ] %}
+        {% for tile in tiles %}
+            <twig:Card size="sm">
+                <twig:Card:Content>
+                    <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><twig:ux:icon name="{{ tile.icon }}" class="size-3.5" /> {{ tile.label }}</p>
+                    <p class="text-2xl font-semibold tabular-nums">{{ tile.value }}</p>
+                    <p class="text-xs text-muted-foreground">{{ tile.hint }}</p>
+                </twig:Card:Content>
+            </twig:Card>
+        {% endfor %}
+
+        <twig:Card size="sm">
+            <twig:Card:Content>
+                <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><twig:ux:icon name="lucide:siren" class="size-3.5" /> Urgentes <span class="ms-auto">Score</span></p>
+                <p class="text-2xl font-semibold tabular-nums">{{ progress.urgent|number_format(0, ',', ' ') }}</p>
+                <a href="{{ path('app_inbox', {sort: 'priority'}) }}" class="text-xs text-muted-foreground underline underline-offset-4">priorité de 2 ou plus, sur 3</a>
+            </twig:Card:Content>
+        </twig:Card>
+        <twig:Card size="sm">
+            <twig:Card:Content>
+                <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><twig:ux:icon name="lucide:bug" class="size-3.5" /> Bugs à transmettre <span class="ms-auto">Noul</span></p>
+                <p class="text-2xl font-semibold tabular-nums">{{ progress.probableBugs|number_format(0, ',', ' ') }}</p>
+                <a href="{{ path('app_inbox', {bugs: 1}) }}" class="text-xs text-muted-foreground underline underline-offset-4">probabilité de 0,5 ou plus</a>
+            </twig:Card:Content>
+        </twig:Card>
+        <twig:Card size="sm">
+            <twig:Card:Content>
+                <p class="flex items-center gap-1.5 text-xs text-muted-foreground"><twig:ux:icon name="lucide:activity" class="size-3.5" /> Latence de Jev</p>
+                {% if progress.latency %}
+                    <p class="text-2xl font-semibold tabular-nums">{{ progress.latency.median }} ms</p>
+                    <p class="text-xs text-muted-foreground tabular-nums">médiane · moyenne {{ progress.latency.mean }} · p95 {{ progress.latency.p95 }} · max {{ progress.latency.max }}</p>
+                {% else %}
+                    <p class="text-2xl font-semibold">–</p>
+                    <p class="text-xs text-muted-foreground">médiane par appel</p>
+                {% endif %}
+            </twig:Card:Content>
+        </twig:Card>
+    </div>
+
+    <twig:Card>
+        <twig:Card:Header>
+            <twig:Card:Title>Ce que veulent les usagers</twig:Card:Title>
+            <twig:Card:Description>Répartition des demandes qualifiées par intention</twig:Card:Description>
+            <twig:Card:Action><twig:Badge variant="outline">Choice</twig:Badge></twig:Card:Action>
+        </twig:Card:Header>
+        <twig:Card:Content class="flex flex-col gap-3">
+            {% for intention in dashboard.intentions %}
+                <div class="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)_5.5rem] items-center gap-3 text-sm">
+                    <a href="{{ path('app_inbox', {intention: intention.value}) }}" class="truncate underline-offset-4 hover:underline">{{ intention.label }}</a>
+                    <twig:Progress value="{{ progress.share(intention) }}" class="h-2" aria-label="{{ intention.label }}" />
+                    <span class="text-end text-muted-foreground tabular-nums">{{ progress.byIntention[intention.value]|number_format(0, ',', ' ') }} · {{ progress.share(intention) }} %</span>
+                </div>
+            {% endfor %}
+        </twig:Card:Content>
+    </twig:Card>
+</div>

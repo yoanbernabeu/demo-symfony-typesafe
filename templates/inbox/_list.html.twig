@@ -1,17 +1,43 @@
-{# Paginating or searching swaps this frame only, and keeps the address bar in sync #}
+{# Paginating, searching or filtering swaps this frame only, and keeps the address bar in sync #}
 <turbo-frame id="experiences" data-turbo-action="advance" class="flex min-h-0 flex-col border-b lg:border-e lg:border-b-0">
-    <p class="flex items-center gap-2 border-b px-4 py-2 text-sm text-muted-foreground">
-        <twig:Badge variant="secondary">{{ page.total|number_format(0, ',', ' ') }}</twig:Badge>
-        {{ search ? 'résultat' : 'demande' }}{{ page.total > 1 ? 's' }}{% if search %} pour « {{ search }} »{% endif %}
-    </p>
+    <div class="flex flex-col gap-2 border-b px-3 py-2">
+        <p class="flex items-center gap-2 text-sm text-muted-foreground">
+            <twig:Badge variant="secondary">{{ page.total|number_format(0, ',', ' ') }}</twig:Badge>
+            {{ query.filtered ? 'résultat' : 'demande' }}{{ page.total > 1 ? 's' }}{% if query.search %} pour « {{ query.search }} »{% endif %}
+            {% if query.filtered %}
+                <a href="{{ path('app_inbox', query.toParameters({q: '', intention: null, bugs: false})) }}" class="ms-auto text-xs underline underline-offset-4">Tout afficher</a>
+            {% endif %}
+        </p>
+
+        {# Filters are plain links: the current one is pressed, clicking it again releases it #}
+        <nav aria-label="Filtres" class="flex flex-wrap items-center gap-1">
+            {% for intention in enum_cases('App\\Triage\\Intention') %}
+                {% set active = query.intention == intention %}
+                <twig:Badge as="a" href="{{ path('app_inbox', query.toParameters({intention: active ? null : intention})) }}" variant="{{ active ? 'default' : 'outline' }}" aria-pressed="{{ active ? 'true' : 'false' }}">{{ intention.label }}</twig:Badge>
+            {% endfor %}
+            <twig:Badge as="a" href="{{ path('app_inbox', query.toParameters({bugs: not query.bugs})) }}" variant="{{ query.bugs ? 'default' : 'outline' }}" aria-pressed="{{ query.bugs ? 'true' : 'false' }}">
+                <twig:ux:icon name="lucide:bug" /> Bugs à transmettre
+            </twig:Badge>
+        </nav>
+
+        <nav aria-label="Tri" class="flex items-center gap-1 text-xs text-muted-foreground">
+            <twig:ux:icon name="lucide:arrow-down-wide-narrow" class="size-3.5" />
+            {% for sort in enum_cases('App\\Inbox\\InboxSort') %}
+                <twig:Badge as="a" href="{{ path('app_inbox', query.toParameters({sort: sort})) }}" variant="{{ query.sort == sort ? 'secondary' : 'ghost' }}" aria-current="{{ query.sort == sort ? 'true' : 'false' }}">{{ sort.label }}</twig:Badge>
+            {% endfor %}
+        </nav>
+    </div>
+
     {% if page.items is empty %}
         <twig:Empty>
             <twig:Empty:Header>
                 <twig:Empty:Media variant="icon"><twig:ux:icon name="lucide:search-x" /></twig:Empty:Media>
                 <twig:Empty:Title>Aucune demande</twig:Empty:Title>
                 <twig:Empty:Description>
-                    {% if search %}
-                        Rien ne correspond à « {{ search }} ».
+                    {% if query.search %}
+                        Rien ne correspond à « {{ query.search }} ».
+                    {% elseif query.filtered %}
+                        Aucune demande qualifiée ne correspond à ces filtres. Lancez la <a href="{{ path('app_triage') }}" data-turbo-frame="_top">qualification</a>.
                     {% else %}
                         La base est vide : lancez <code>bin/console app:dataset:import</code>.
                     {% endif %}
@@ -39,6 +65,7 @@
                                 <time datetime="{{ experience.writtenAt|date('Y-m-d') }}" class="text-xs font-normal text-muted-foreground">{{ experience.writtenAt|date('d/m/Y') }}</time>
                             </twig:Item:Title>
                             <twig:Item:Description>{{ experience.text }}</twig:Item:Description>
+                            {{ include('inbox/_triage_badges.html.twig') }}
                         </twig:Item:Content>
                     </twig:Item>
                 {% endfor %}
@@ -63,7 +90,7 @@
                             </li>
                         {% elseif link.enabled %}
                             <twig:Pagination:Item>
-                                <twig:Pagination:Link href="{{ path('app_inbox', {page: link.number, q: search ?: null}) }}" aria-label="{{ link.label }}" title="{{ link.label }}">
+                                <twig:Pagination:Link href="{{ path('app_inbox', query.toParameters({page: link.number})) }}" aria-label="{{ link.label }}" title="{{ link.label }}">
                                     <twig:ux:icon name="{{ link.icon }}" />
                                 </twig:Pagination:Link>
                             </twig:Pagination:Item>
