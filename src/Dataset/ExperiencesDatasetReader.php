@@ -5,7 +5,7 @@ namespace App\Dataset;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * Streams the experiences out of the downloaded dataset, one at a time, so the
+ * Streams the rows out of the downloaded dataset, one at a time, so the
  * whole file never has to fit in memory.
  */
 final class ExperiencesDatasetReader
@@ -25,7 +25,7 @@ final class ExperiencesDatasetReader
      * @param int                     $minLength Shortest text to keep, in characters
      * @param int                     $maxLength Longest text to keep, in characters
      *
-     * @return \Generator<int, Experience>
+     * @return \Generator<int, DatasetRow>
      */
     public function read(?\DateTimeInterface $since = null, ?\DateTimeInterface $until = null, int $minLength = 80, int $maxLength = 1500): \Generator
     {
@@ -59,7 +59,7 @@ final class ExperiencesDatasetReader
                     continue;
                 }
 
-                yield new Experience($row[$columns['id']], $writtenAt, $text);
+                yield new DatasetRow($row[$columns['id']], $writtenAt, $text);
             }
         } finally {
             fclose($handle);

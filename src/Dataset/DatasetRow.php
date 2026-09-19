@@ -3,9 +3,9 @@
 namespace App\Dataset;
 
 /**
- * What a user wrote to a public service. Nothing else of the dataset is kept.
+ * A row of the dataset, reduced to what a user wrote to a public service.
  */
-final readonly class Experience
+final readonly class DatasetRow
 {
     public function __construct(
         public string $id,

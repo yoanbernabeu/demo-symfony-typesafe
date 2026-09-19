@@ -52,9 +52,26 @@ Vous pouvez passer votre propre texte :
 bin/console app:jev:test "Mon colis est arrivé ouvert et il manque la moitié de la commande."
 ```
 
+## Le jeu de données
+
+La démo travaille sur de vraies demandes adressées aux services publics français,
+publiées en données ouvertes sur
+[data.gouv.fr](https://www.data.gouv.fr/datasets/liste-des-experiences-partagees-par-les-usagers).
+Seul le texte des demandes est conservé.
+
+```bash
+bin/console doctrine:migrations:migrate --no-interaction   # crée la base SQLite dans var/
+bin/console app:dataset:download                           # télécharge le CSV (environ 260 Mo) dans var/dataset/
+bin/console app:dataset:import                             # importe les demandes écrites depuis 2025
+```
+
+L'import peut être relancé sans risque : ce qui est déjà en base n'est pas réimporté.
+Les options `--since=2026-01-01` et `--limit=500` permettent de n'en charger qu'une partie.
+
 ## Où regarder dans le code
 
 - `src/Command/JevTestCommand.php` : un appel complet, des questions aux réponses.
+- `src/Dataset/` : le téléchargement, la lecture en flux et l'import du jeu de données.
 - `packages/ai-type-safe-platform/` : le bridge TypeSafe pour Symfony AI. Il est
   embarqué dans le dépôt, Composer le charge comme un paquet local.
 - `config/services.yaml` : la déclaration de la plateforme. Le tag `ai.platform`
