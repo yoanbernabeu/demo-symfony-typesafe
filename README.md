@@ -88,8 +88,12 @@ Lancez le serveur web de PHP et, dans un second terminal, le worker qui traite l
 
 ```bash
 php -S 127.0.0.1:8000 -t public
-bin/console messenger:consume async
+bin/console messenger:consume async --no-debug
 ```
+
+`--no-debug` compte : en mode debug, un worker qui attend sans rien faire grossit de plus d'un mégaoctet
+par minute, jusqu'à ce que PHP l'arrête. Après un changement de configuration, lancez
+`bin/console cache:clear` avant de le redémarrer.
 
 </details>
 

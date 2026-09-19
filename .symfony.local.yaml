@@ -7,5 +7,10 @@ workers:
     # Handles the queued messages, that is the batches of experiences sent to Jev.
     # A single worker on purpose: SQLite does not cope well with several writers, and
     # every batch already talks to Jev concurrently.
+    #
+    # --no-debug matters: in debug mode Doctrine keeps every query for the profiler, including the
+    # one polling the queue every second. An idle worker then grows by more than 1 MB per minute
+    # until PHP kills it, and nothing restarts it. Run "bin/console cache:clear" after changing
+    # the configuration or the wiring of a service, as this mode does not notice it by itself.
     messenger_consume_async:
-        cmd: ['symfony', 'console', 'messenger:consume', 'async', '--memory-limit=256M']
+        cmd: ['symfony', 'console', 'messenger:consume', 'async', '--no-debug']

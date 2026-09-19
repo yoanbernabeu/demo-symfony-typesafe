@@ -8,6 +8,7 @@ use App\Triage\TriageLauncher;
 use App\Triage\TriageProgress;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpKernel\Profiler\Profiler;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -28,12 +29,18 @@ final class TriageDashboard
         private readonly TriageLauncher $launcher,
         private readonly ClockInterface $clock,
         #[Autowire(env: 'int:APP_TRIAGE_REQUESTS_PER_MINUTE')] private readonly int $requestsPerMinute,
+        // Only exists when the profiler is installed and enabled, that is in dev
+        #[Autowire(service: 'profiler')] private readonly ?Profiler $profiler = null,
     ) {
     }
 
     #[LiveAction]
     public function launch(): void
     {
+        // Queuing a whole year dispatches a thousand messages and marks tens of thousands of rows: the profiler
+        // would run out of memory trying to store the details of all that, and take the request down with it
+        $this->profiler?->disable();
+
         $this->launcher->launch();
         $this->progress = null;
     }

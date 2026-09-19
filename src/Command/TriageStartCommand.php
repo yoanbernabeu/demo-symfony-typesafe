@@ -26,7 +26,7 @@ final class TriageStartCommand
             return 0;
         }
 
-        $io->success(\sprintf('%d experiences queued. Process them with "bin/console messenger:consume async" (already running under "symfony serve").', $queued));
+        $io->success(\sprintf('%d experiences queued. Process them with "bin/console messenger:consume async --no-debug" (already running under "symfony serve").', $queued));
 
         return 0;
     }
